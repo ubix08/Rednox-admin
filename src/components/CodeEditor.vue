@@ -4,7 +4,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue';
-import * as monaco from 'monaco-editor';
+import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 
 const props = defineProps<{ modelValue: string }>();
 const emit = defineEmits(['update:modelValue']);
