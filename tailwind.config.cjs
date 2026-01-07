@@ -1,11 +1,11 @@
-// ========================================
-// tailwind.config.js - FIXED VERSION
+/ ========================================
+// tailwind.config.cjs - USE .cjs EXTENSION
 // ========================================
 /** @type {import('tailwindcss').Config} */
-export default {
+module.exports = {
   content: [
     "./index.html",
-    "./src/**/*.{js,jsx}"
+    "./src/**/*.{js,jsx,ts,tsx}"
   ],
   theme: {
     extend: {},
