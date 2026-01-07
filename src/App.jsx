@@ -1,4 +1,5 @@
 
+// src/App.jsx - FIXED VERSION
 import React, { useState, useEffect } from 'react';
 import { 
   Plus, Play, Trash2, Activity, Database, Route, BarChart3, 
@@ -362,7 +363,7 @@ function FlowCard({ flow, onRefresh }) {
   };
 
   const deleteFlow = async () => {
-    if (!confirm(`Delete flow "${flow.name}"?`)) return;
+    if (!window.confirm(`Delete flow "${flow.name}"?`)) return;
     
     setLoading(true);
     try {
