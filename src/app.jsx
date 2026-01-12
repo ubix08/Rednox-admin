@@ -1,15 +1,10 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import ReactFlow, {
-  Node,
-  Edge,
   Controls,
   Background,
   applyNodeChanges,
   applyEdgeChanges,
   addEdge,
-  Connection,
-  NodeChange,
-  EdgeChange,
   MiniMap,
   Panel,
 } from 'reactflow';
@@ -22,21 +17,12 @@ import {
   Trash2, 
   List, 
   Code,
-  Activity,
-  Terminal,
   Menu,
   X,
-  Download,
-  Upload,
-  Eye,
-  EyeOff,
   Zap,
   Database,
-  RefreshCw
 } from 'lucide-react';
-
-// API Configuration
-const API_BASE = 'https://your-worker.workers.dev';
+import { API_BASE } from './config';
 
 // Custom Node Component
 const CustomNode = ({ data }) => {
@@ -175,8 +161,8 @@ const FlowList = ({ flows, onSelectFlow, onCreateFlow, onDeleteFlow }) => {
 };
 
 // Main App Component
-export default function RedNoxAdmin() {
-  const [view, setView] = useState('flows'); // 'flows' | 'editor'
+export default function App() {
+  const [view, setView] = useState('flows');
   const [flows, setFlows] = useState([]);
   const [currentFlow, setCurrentFlow] = useState(null);
   const [nodes, setNodes] = useState([]);
@@ -187,7 +173,6 @@ export default function RedNoxAdmin() {
   const [initialized, setInitialized] = useState(false);
   const [stats, setStats] = useState(null);
 
-  // Initialize database and load data
   useEffect(() => {
     initializeApp();
   }, []);
@@ -195,7 +180,6 @@ export default function RedNoxAdmin() {
   const initializeApp = async () => {
     setLoading(true);
     try {
-      // Initialize database
       const initRes = await fetch(`${API_BASE}/admin/init`, {
         method: 'POST',
       });
@@ -204,7 +188,6 @@ export default function RedNoxAdmin() {
         console.warn('Database might already be initialized');
       }
 
-      // Load node categories
       const nodesRes = await fetch(`${API_BASE}/admin/nodes`);
       const nodesData = await nodesRes.json();
       
@@ -217,16 +200,13 @@ export default function RedNoxAdmin() {
       });
       setNodeCategories(categorized);
 
-      // Load flows
       await loadFlows();
-
-      // Load stats
       await loadStats();
 
       setInitialized(true);
     } catch (err) {
       console.error('Initialization error:', err);
-      alert('Failed to initialize. Please check your API endpoint.');
+      alert('Failed to initialize. Please check your API endpoint in src/config.js');
     } finally {
       setLoading(false);
     }
@@ -290,11 +270,10 @@ export default function RedNoxAdmin() {
       
       setCurrentFlow(data);
       
-      // Convert flow config to React Flow format
-      const reactFlowNodes = (data.config.nodes || []).map((node) => ({
+      const reactFlowNodes = (data.config.nodes || []).map((node, idx) => ({
         id: node.id,
         type: 'custom',
-        position: node.position || { x: Math.random() * 400, y: Math.random() * 400 },
+        position: node.position || { x: 100 + (idx * 200), y: 100 },
         data: {
           label: node.name || node.type,
           type: node.type,
@@ -314,7 +293,6 @@ export default function RedNoxAdmin() {
               id: `${node.id}-${outputIndex}-${targetId}`,
               source: node.id,
               target: targetId,
-              sourceHandle: `output-${outputIndex}`,
             });
           });
         });
@@ -359,9 +337,8 @@ export default function RedNoxAdmin() {
         wires: edges
           .filter((edge) => edge.source === node.id)
           .reduce((acc, edge) => {
-            const outputIndex = 0; // Simplified for MVP
-            if (!acc[outputIndex]) acc[outputIndex] = [];
-            acc[outputIndex].push(edge.target);
+            if (!acc[0]) acc[0] = [];
+            acc[0].push(edge.target);
             return acc;
           }, []),
         ...node.data,
@@ -441,23 +418,11 @@ export default function RedNoxAdmin() {
   };
 
   const getNodeColor = (type) => {
-    const colors = {
-      input: '#e7e7ae',
-      output: '#10b981',
-      function: '#e7e7ae',
-      parser: '#fdd0a2',
-    };
-    return colors[type] || '#3b82f6';
+    return '#3b82f6';
   };
 
   const getNodeColorLight = (type) => {
-    const colors = {
-      input: '#f5f5d8',
-      output: '#34d399',
-      function: '#f5f5d8',
-      parser: '#fed7aa',
-    };
-    return colors[type] || '#eff6ff';
+    return '#eff6ff';
   };
 
   if (loading && !initialized) {
@@ -470,315 +435,134 @@ export default function RedNoxAdmin() {
   }
 
   return (
-    <div className="app">
-      {/* Header */}
-      <header className="header">
-        <div className="header-left">
-          <Zap size={24} color="#3b82f6" />
-          <h1>RedNox Admin</h1>
-        </div>
-        <div className="header-right">
-          {view === 'editor' && (
+    <>
+      <div className="app">
+        <header className="header">
+          <div className="header-left">
+            <Zap size={24} color="#3b82f6" />
+            <h1>RedNox Admin</h1>
+          </div>
+          <div className="header-right">
+            {view === 'editor' && (
+              <>
+                <button onClick={() => setView('flows')} className="btn-secondary">
+                  <List size={16} />
+                  All Flows
+                </button>
+                <button onClick={handleSaveFlow} className="btn-primary">
+                  <Save size={16} />
+                  Save
+                </button>
+              </>
+            )}
+            {stats && (
+              <div className="stats-badge">
+                <Database size={14} />
+                {stats.flows.total} flows
+              </div>
+            )}
+          </div>
+        </header>
+
+        <main className="main">
+          {view === 'flows' ? (
+            <FlowList
+              flows={flows}
+              onSelectFlow={handleSelectFlow}
+              onCreateFlow={handleCreateFlow}
+              onDeleteFlow={handleDeleteFlow}
+            />
+          ) : (
             <>
-              <button onClick={() => setView('flows')} className="btn-secondary">
-                <List size={16} />
-                All Flows
-              </button>
-              <button onClick={handleSaveFlow} className="btn-primary">
-                <Save size={16} />
-                Save
-              </button>
+              <Sidebar
+                isOpen={sidebarOpen}
+                onClose={() => setSidebarOpen(false)}
+                nodeCategories={nodeCategories}
+                onAddNode={handleAddNode}
+              />
+              <div className="editor-container">
+                <ReactFlow
+                  nodes={nodes}
+                  edges={edges}
+                  onNodesChange={onNodesChange}
+                  onEdgesChange={onEdgesChange}
+                  onConnect={onConnect}
+                  nodeTypes={nodeTypes}
+                  fitView
+                >
+                  <Controls />
+                  <MiniMap />
+                  <Background variant="dots" gap={12} size={1} />
+                  <Panel position="top-left">
+                    <button
+                      onClick={() => setSidebarOpen(!sidebarOpen)}
+                      className="btn-primary"
+                    >
+                      <Menu size={16} />
+                      Add Node
+                    </button>
+                  </Panel>
+                </ReactFlow>
+              </div>
             </>
           )}
-          {stats && (
-            <div className="stats-badge">
-              <Database size={14} />
-              {stats.flows.total} flows
-            </div>
-          )}
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="main">
-        {view === 'flows' ? (
-          <FlowList
-            flows={flows}
-            onSelectFlow={handleSelectFlow}
-            onCreateFlow={handleCreateFlow}
-            onDeleteFlow={handleDeleteFlow}
-          />
-        ) : (
-          <>
-            <Sidebar
-              isOpen={sidebarOpen}
-              onClose={() => setSidebarOpen(false)}
-              nodeCategories={nodeCategories}
-              onAddNode={handleAddNode}
-            />
-            <div className="editor-container">
-              <ReactFlow
-                nodes={nodes}
-                edges={edges}
-                onNodesChange={onNodesChange}
-                onEdgesChange={onEdgesChange}
-                onConnect={onConnect}
-                nodeTypes={nodeTypes}
-                fitView
-              >
-                <Controls />
-                <MiniMap />
-                <Background variant="dots" gap={12} size={1} />
-                <Panel position="top-left">
-                  <button
-                    onClick={() => setSidebarOpen(!sidebarOpen)}
-                    className="btn-primary"
-                  >
-                    <Menu size={16} />
-                    Add Node
-                  </button>
-                </Panel>
-              </ReactFlow>
-            </div>
-          </>
-        )}
-      </main>
-
-      {/* Global Styles */}
+        </main>
+      </div>
       <style>{`
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        .app { display: flex; flex-direction: column; height: 100vh; background: #f8fafc; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; background: white; border-bottom: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .header-left { display: flex; align-items: center; gap: 0.75rem; }
+        .header-left h1 { font-size: 1.5rem; font-weight: 700; color: #1e293b; }
+        .header-right { display: flex; align-items: center; gap: 0.75rem; }
+        .stats-badge { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: #eff6ff; border-radius: 6px; font-size: 0.875rem; color: #1e40af; font-weight: 500; }
+        .main { flex: 1; overflow: hidden; position: relative; }
+        .flow-list { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+        .flow-list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .flow-list-header h2 { font-size: 1.875rem; font-weight: 700; color: #1e293b; }
+        .flow-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+        .flow-item { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.5rem; cursor: pointer; transition: all 0.2s; }
+        .flow-item:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); transform: translateY(-2px); }
+        .flow-item-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem; }
+        .flow-item-header h3 { font-size: 1.125rem; font-weight: 600; color: #1e293b; }
+        .flow-description { color: #64748b; font-size: 0.875rem; margin-bottom: 1rem; line-height: 1.5; }
+        .flow-item-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #f1f5f9; }
+        .flow-date { font-size: 0.75rem; color: #94a3b8; }
+        .badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+        .badge-success { background: #dcfce7; color: #166534; }
+        .badge-secondary { background: #f1f5f9; color: #64748b; }
+        .empty-state { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem; text-align: center; color: #94a3b8; }
+        .empty-state p { margin: 1rem 0 2rem; font-size: 1.125rem; }
+        .sidebar { position: absolute; top: 0; left: 0; bottom: 0; width: 320px; background: white; border-right: 1px solid #e2e8f0; box-shadow: 2px 0 8px rgba(0,0,0,0.1); z-index: 1000; display: flex; flex-direction: column; }
+        .sidebar-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid #e2e8f0; }
+        .sidebar-header h2 { font-size: 1.25rem; font-weight: 600; color: #1e293b; }
+        .sidebar-content { flex: 1; overflow-y: auto; padding: 1rem; }
+        .node-category { margin-bottom: 1.5rem; }
+        .node-category h3 { font-size: 0.875rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem; }
+        .node-palette-item { display: flex; align-items: center; gap: 0.75rem; width: 100%; padding: 0.75rem 1rem; background: white; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 0.5rem; cursor: pointer; transition: all 0.2s; font-size: 0.875rem; font-weight: 500; color: #334155; }
+        .node-palette-item:hover { background: #f8fafc; border-color: #cbd5e1; }
+        .editor-container { width: 100%; height: 100%; }
+        .btn-primary { display: flex; align-items: center; gap: 0.5rem; padding: 0.625rem 1.25rem; background: #3b82f6; color: white; border: none; border-radius: 6px; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-secondary { display: flex; align-items: center; gap: 0.5rem; padding: 0.625rem 1.25rem; background: white; color: #334155; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-secondary:hover { background: #f8fafc; border-color: #cbd5e1; }
+        .btn-icon { display: flex; align-items: center; justify-content: center; padding: 0.5rem; background: transparent; border: none; border-radius: 6px; cursor: pointer; transition: all 0.2s; color: #64748b; }
+        .btn-icon:hover { background: #f1f5f9; color: #334155; }
+        .btn-danger { color: #dc2626; }
+        .btn-danger:hover { background: #fee2e2; }
+        .loading-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #f8fafc; }
+        .spinner { width: 48px; height: 48px; border: 4px solid #e2e8f0; border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-screen p { margin-top: 1rem; color: #64748b; font-size: 0.875rem; }
+        @media (max-width: 768px) {
+          .header { padding: 0.75rem 1rem; }
+          .header-left h1 { font-size: 1.25rem; }
+          .flow-list { padding: 1rem; }
+          .flow-items { grid-template-columns: 1fr; }
+          .sidebar { width: 100%; max-width: 320px; }
         }
-
-        body {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-          -webkit-font-smoothing: antialiased;
-        }
-
-        .app {
-          display: flex;
-          flex-direction: column;
-          height: 100vh;
-          background: #f8fafc;
-        }
-
-        .header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 1rem 1.5rem;
-          background: white;
-          border-bottom: 1px solid #e2e8f0;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-
-        .header-left {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-        }
-
-        .header-left h1 {
-          font-size: 1.5rem;
-          font-weight: 700;
-          color: #1e293b;
-        }
-
-        .header-right {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-        }
-
-        .stats-badge {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          padding: 0.5rem 1rem;
-          background: #eff6ff;
-          border-radius: 6px;
-          font-size: 0.875rem;
-          color: #1e40af;
-          font-weight: 500;
-        }
-
-        .main {
-          flex: 1;
-          overflow: hidden;
-          position: relative;
-        }
-
-        .flow-list {
-          max-width: 1200px;
-          margin: 0 auto;
-          padding: 2rem;
-        }
-
-        .flow-list-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 2rem;
-        }
-
-        .flow-list-header h2 {
-          font-size: 1.875rem;
-          font-weight: 700;
-          color: #1e293b;
-        }
-
-        .flow-items {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-          gap: 1.5rem;
-        }
-
-        .flow-item {
-          background: white;
-          border: 1px solid #e2e8f0;
-          border-radius: 8px;
-          padding: 1.5rem;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .flow-item:hover {
-          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-          transform: translateY(-2px);
-        }
-
-        .flow-item-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: start;
-          margin-bottom: 0.75rem;
-        }
-
-        .flow-item-header h3 {
-          font-size: 1.125rem;
-          font-weight: 600;
-          color: #1e293b;
-        }
-
-        .flow-description {
-          color: #64748b;
-          font-size: 0.875rem;
-          margin-bottom: 1rem;
-          line-height: 1.5;
-        }
-
-        .flow-item-footer {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-top: 1rem;
-          padding-top: 1rem;
-          border-top: 1px solid #f1f5f9;
-        }
-
-        .flow-date {
-          font-size: 0.75rem;
-          color: #94a3b8;
-        }
-
-        .badge {
-          padding: 0.25rem 0.75rem;
-          border-radius: 9999px;
-          font-size: 0.75rem;
-          font-weight: 600;
-        }
-
-        .badge-success {
-          background: #dcfce7;
-          color: #166534;
-        }
-
-        .badge-secondary {
-          background: #f1f5f9;
-          color: #64748b;
-        }
-
-        .empty-state {
-          grid-column: 1 / -1;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 4rem;
-          text-align: center;
-          color: #94a3b8;
-        }
-
-        .empty-state p {
-          margin: 1rem 0 2rem;
-          font-size: 1.125rem;
-        }
-
-        .sidebar {
-          position: absolute;
-          top: 0;
-          left: 0;
-          bottom: 0;
-          width: 320px;
-          background: white;
-          border-right: 1px solid #e2e8f0;
-          box-shadow: 2px 0 8px rgba(0,0,0,0.1);
-          z-index: 1000;
-          display: flex;
-          flex-direction: column;
-        }
-
-        .sidebar-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 1rem 1.5rem;
-          border-bottom: 1px solid #e2e8f0;
-        }
-
-        .sidebar-header h2 {
-          font-size: 1.25rem;
-          font-weight: 600;
-          color: #1e293b;
-        }
-
-        .sidebar-content {
-          flex: 1;
-          overflow-y: auto;
-          padding: 1rem;
-        }
-
-        .node-category {
-          margin-bottom: 1.5rem;
-        }
-
-        .node-category h3 {
-          font-size: 0.875rem;
-          font-weight: 600;
-          color: #64748b;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          margin-bottom: 0.75rem;
-        }
-
-        .node-palette-item {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          width: 100%;
-          padding: 0.75rem 1rem;
-          background: white;
-          border: 1px solid #e2e8f0;
-          border-radius: 6px;
-          margin-bottom: 0.5rem;
-          cursor: pointer;
-          transition: all 0.2s;
-          font-size: 0.875rem;
-          font-weight: 500;
-          color: #334155;
-        }
-
-        .node-palette-item:hover {
-          background: 
+      `}</style>
+    </>
+  );
+}
