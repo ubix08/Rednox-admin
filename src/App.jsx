@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Plus, Play, Trash2, Activity, Database, Route, BarChart3, 
+  Plus, Play, Trash2, Activity, Database, GitBranch, BarChart3, 
   Search, RefreshCw, AlertCircle, CheckCircle, Clock, Power, PowerOff, 
   Menu, X, Home, Boxes, Download, Upload, Edit3, Save, Code, 
   Maximize2, Minimize2, Eye, Settings, Zap, Link, FileJson,
@@ -154,7 +154,7 @@ function Sidebar({ showSidebar, currentView, setCurrentView, stats }) {
             onClick={() => setCurrentView('flows')}
           />
           <NavItem 
-            icon={<Route className="w-5 h-5" />} 
+            icon={<GitBranch className="w-5 h-5" />} 
             label="Routes" 
             badge={stats?.routes}
             active={currentView === 'routes'}
@@ -267,7 +267,7 @@ function DashboardView({ stats, flows }) {
         <StatCard
           title="Routes"
           value={stats?.routes || 0}
-          icon={<Route className="w-5 h-5 md:w-6 md:h-6" />}
+          icon={<GitBranch className="w-5 h-5 md:w-6 md:h-6" />}
           color="purple"
         />
         <StatCard
