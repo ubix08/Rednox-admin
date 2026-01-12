@@ -1,7 +1,10 @@
-javascript
 // API Configuration
-// Update this with your Cloudflare Worker URL
+// IMPORTANT: Update this with your actual Cloudflare Worker URL
 export const API_BASE = import.meta.env.VITE_API_BASE || 'https://rednox.ubixsnow08.workers.dev/';
 
-// You can also use environment variables
-// In Cloudflare Pages, set VITE_API_BASE in your environment variables
+// Optional: Add environment-specific configs
+export const CONFIG = {
+  apiBase: API_BASE,
+  refreshInterval: 30000, // 30 seconds
+  environment: import.meta.env.MODE
+};
