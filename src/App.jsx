@@ -8,7 +8,7 @@ import { flowApi } from './api';
 import { Header } from './components/layout/Header';
 import { TopNavBar } from './components/layout/TopNavBar';
 import { FlowEditor } from './components/flow/FlowEditor';
-import { SettingsModal } from './components/panels/SettingsModal';
+import { SettingsModal } from './components/modals/SettingsModal';
 import { useFlowOperations } from './hooks/useFlowOperations';
 
 function App() {
