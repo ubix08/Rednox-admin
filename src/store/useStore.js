@@ -5,7 +5,7 @@ import { create } from 'zustand';
 
 export const useStore = create((set) => ({
   // API Configuration
-  apiUrl: 'https://rednox.ubixsnow08.workers.dev',
+  apiUrl: 'https://rednox.orionai-hub.workers.dev',
   
   // Flow Management
   flows: [],
